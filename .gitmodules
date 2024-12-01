@@ -1,0 +1,3 @@
+[submodule "BNext"]
+	path = BNext
+	url = https://github.com/hpi-xnor/BNext.git
