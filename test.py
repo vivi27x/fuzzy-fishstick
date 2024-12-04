@@ -12,7 +12,6 @@ from model.model import BNext4DFR
 import os
 os.environ["WANDB_DISABLED"] = "true"
 
-import model
 from lib.util import load_config
 import random
 import numpy as np
@@ -78,7 +77,6 @@ if __name__ == "__main__":
         dataset_path=cfg["dataset"]["cifake_path"],
         split="test",
         resolution=cfg["test"]["resolution"],
-        magnitude=False
     )
 
     # loads the dataloaders
@@ -93,47 +91,48 @@ if __name__ == "__main__":
     )
 
     # init model
-    net = BNext4DFR() #.load_from_checkpoint(join(cfg["test"]["weights_path"], f"{cfg['dataset']['name']}_{cfg['model']['backbone'][-1]}{'_unfrozen' if not cfg['model']['freeze_backbone'] else ''}.ckpt"), strict=False)
+    # net = BNext4DFR.load_from_checkpoint(join(cfg["test"]["weights_path"], f"{cfg['dataset']['name']}_{cfg['model']['backbone'][-1]}{'_unfrozen' if not cfg['model']['freeze_backbone'] else ''}.ckpt"), strict=False)
+    # net  = BNext4DFR()
 
-    device = "cpu"
-    net = net.to(device)
+    # device = "cpu"
+    # net = net.to(device)
 
-    param_size = 0
-    for param in net.parameters():
-        param_size += param.nelement() * param.element_size()
-    buffer_size = 0
-    for buffer in net.buffers():
-        buffer_size += buffer.nelement() * buffer.element_size()
+    # param_size = 0
+    # for param in net.parameters():
+    #     param_size += param.nelement() * param.element_size()
+    # buffer_size = 0
+    # for buffer in net.buffers():
+    #     buffer_size += buffer.nelement() * buffer.element_size()
 
-    size_all_mb = (param_size + buffer_size) / 1024**2
-    print('model size: {:.3f}MB'.format(size_all_mb))
+    # size_all_mb = (param_size + buffer_size) / 1024**2
+    # print('model size: {:.3f}MB'.format(size_all_mb))
 
-    # Specify quantization configuration
-    # Start with simple min/max range estimation and per-tensor quantization of weights
-    net = net.to('cpu')
+    # # Specify quantization configuration
+    # # Start with simple min/max range estimation and per-tensor quantization of weights
+    # net = net.to('cpu')
 
-    net.eval()#
-    model_to_quantize = copy.deepcopy(net)
-    qconfig = torch.ao.quantization.default_dynamic_qconfig # 'fbgemm' for server, 'qnnpack' for mobile
-    # qconfig_mapping = torch.ao.quantization.QConfigMapping().set_global(qconfig)
-    qconfig_mapping = get_default_qconfig_mapping('fbgemm')
+    # net.eval()#
+    # model_to_quantize = copy.deepcopy(net)
+    # qconfig = torch.ao.quantization.default_dynamic_qconfig # 'fbgemm' for server, 'qnnpack' for mobile
+    # # qconfig_mapping = torch.ao.quantization.QConfigMapping().set_global(qconfig)
+    # qconfig_mapping = QConfigMapping().set_global(qconfig)
     # Performs 16bit quantization
 
     
     # torch.backends.quantized.engine = 'fbgemm' 
 
-    model_to_quantize.eval()
-    # # prepare
-    model_to_quantize.base_model = quantize_fx.prepare_fx(model_to_quantize.base_model, qconfig_mapping, test_loader)
     # model_to_quantize.eval()
+    # # # prepare
+    # model_to_quantize = quantize_fx.prepare_fx(model_to_quantize, qconfig_mapping, test_loader)
+    # # model_to_quantize.eval()D
 
-    # # calibrate (not shown)
-    # # Replace the forward function of the traced model    
-    calibrate_model(model_to_quantize, test_loader)
-    # # # quantize
+    # # # # calibrate (not shown)
+    # # # # Replace the forward function of the traced model    
+    # # calibrate_model(model_to_quantize, test_loader)
+    # # # # # quantize
     
-    model_to_quantize.base_model = quantize_fx.convert_fx(model_to_quantize.base_model)
-
+    # model_to_quantize = quantize_fx.convert_fx(model_to_quantize)
+    # torch.save(model_to_quantize.state_dict(), 'aadmi.pt')
 
     # # # #
     # # # # quantization aware training for static quantization
@@ -143,12 +142,17 @@ if __name__ == "__main__":
 
     # # # Save the quantized model
     # loaded_quantized_model = model_to_quantize
-    torch.save(model_to_quantize.state_dict(), 'pc.pt')
     # import copy
-    model2 = copy.deepcopy(net)
-    model2.base_model = quantize_fx.prepare_fx(model2.base_model, qconfig_mapping, test_loader)
-    model2.base_model = quantize_fx.convert_fx(model2.base_model)
-    model2.load_state_dict(torch.load('pc.pt'), strict=False)
+    # model2 = copy.deepcopy(net)
+    # model2 = quantize_fx.prepare_fx(model2, qconfig_mapping, test_loader)
+    # model2 = quantize_fx.convert_fx(model2)
+    # model2.load_state_dict(torch.load("aadmi.pt"), strict=False)
+
+    # torch.jit.save(torch.jit.script(model2), 'chandan.pt')
+    # torch.save(model2.state_dict(), 'big_brother.pt')
+    model2 = torch.jit.load('chandan.pt')
+    onnx_model = torch.onnx.dynamo_export(model2, torch.randn(1, 5, 224, 224))
+    onnx_model.save("chandan.onnx")
 
     param_size = 0
     for param in model2.parameters():
@@ -172,6 +176,7 @@ if __name__ == "__main__":
     #     logger=logger,
     # )
     # trainer.test(model=loaded_quantized_model, dataloaders=test_loader)
+
     tot = 0
     corr = 0
     t = 0

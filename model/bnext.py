@@ -36,7 +36,7 @@ class HardSigmoid(nn.Module):
 
     def forward(self, x):
         # return F.relu6(x+3)/6
-        return F.relu(x+3)/6
+        return F.relu(x+3, False)/6
 
 
 class firstconv3x3(nn.Module):
@@ -125,7 +125,7 @@ class SqueezeAndExpand(nn.Module):
         self.se = nn.Sequential(
                         nn.AdaptiveAvgPool2d((1,1)) ,
                         nn.Conv2d(channels, channels // ratio, 1, (1, 1), (0, 0), (1, 1), 1, True),
-                        nn.ReLU(channels//ratio),
+                        nn.ReLU(False),
                         nn.Conv2d(channels//ratio, planes, 1, (1, 1), (0, 0), (1, 1), 1, True),
                     )
 

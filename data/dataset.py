@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as T
 from PIL import Image
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from transforms import add_new_channels
+from data.transforms import add_new_channels
 
 class CIFAKEDataset(Dataset):
     def __init__(self, dataset_path, split, resolution=224, norm_mean=IMAGENET_DEFAULT_MEAN, norm_std=IMAGENET_DEFAULT_STD):
