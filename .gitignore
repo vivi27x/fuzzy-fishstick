@@ -1,4 +1,5 @@
 *.ckpt
 *.pth.tar
+*.pt
 dataset/
 __pycache__/
