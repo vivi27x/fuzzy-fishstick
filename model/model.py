@@ -104,7 +104,7 @@ class BNext4DFR(L.LightningModule):
     def test_step(self, batch, i_batch):
         return self._step(batch, i_batch, phase="test")
     
-    def on_train_epoch_end(self):
+    def on_train_epoch_end(self):   
         self._on_epoch_end()
         
     def on_test_epoch_end(self):
